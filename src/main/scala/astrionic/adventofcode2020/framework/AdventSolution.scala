@@ -87,7 +87,7 @@ trait AdventSolution {
     val startTime = System.nanoTime()
     val solution = solve(input)
     val endTime = System.nanoTime()
-    val executionTimeMilliseconds = (endTime - startTime) / 1000.0
+    val executionTimeMilliseconds = (endTime - startTime) / 1000000.0
 
     println(
       f"⚙️ Solution for day ${day.dayWithLeadingZero}, part $partNumber executed in $executionTimeMilliseconds%.1f ms:"
