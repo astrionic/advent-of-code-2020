@@ -4,9 +4,6 @@ import astrionic.adventofcode2020.framework.AdventSolution
 
 object Day02 extends AdventSolution {
 
-  // writeSolution = true
-  executePart = ExecutePart.One
-
   override def solvePart1(input: String): String = {
     val passwords = parseInput(input)
     val valid = passwords.filter(p => {
@@ -17,7 +14,12 @@ object Day02 extends AdventSolution {
   }
 
   override def solvePart2(input: String): String = {
-    ???
+    val passwords = parseInput(input)
+    val valid = passwords.filter(p => {
+      (p.password(p.min - 1) == p.letter && p.password(p.max - 1) != p.letter) ||
+        (p.password(p.min - 1) != p.letter && p.password(p.max - 1) == p.letter)
+    })
+    valid.length.toString
   }
 
   private def parseInput(input: String): Array[Password] = {
