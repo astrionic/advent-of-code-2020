@@ -5,7 +5,17 @@ case class Password(
     max: Int,
     letter: Char,
     password: String
-)
+) {
+  def isValidPart1: Boolean = {
+    val occurrences = password.count(_ == letter)
+    occurrences >= min && occurrences <= max
+  }
+
+  def isValidPart2: Boolean = {
+    (password(min - 1) == letter && password(max - 1) != letter) ||
+    (password(min - 1) != letter && password(max - 1) == letter)
+  }
+}
 
 object Password {
   def fromString(s: String): Password = {
