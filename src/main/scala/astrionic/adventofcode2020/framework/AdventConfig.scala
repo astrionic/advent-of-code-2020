@@ -18,11 +18,6 @@ private[adventofcode2020] object AdventConfig {
   val solutionDirectory = s"$resourceDirectory/solutions/"
 
   /**
-   * Path to the directory where the output files will be created.
-   */
-  val outputDirectory = "./aoc_output/"
-
-  /**
    * Path to the template that is used to generate boilerplate code for each day
    */
   val solutionTemplatePath = s"$resourceDirectory/solution_code_template.txt"

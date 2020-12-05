@@ -71,18 +71,6 @@ private[adventofcode2020] object AdventIO {
   }
 
   /**
-   * Writes the given content to the [[AdventConfig.outputDirectory]], into a file with the given name. Creates the
-   * necessary directories on the path if they don't already exist.
-   *
-   * @param fileName
-   *   The file name
-   * @param content
-   *   Content to be written to the file
-   */
-  def writeOutput(fileName: String, content: String): Unit =
-    writeFile(AdventConfig.outputDirectory, s"$fileName.txt", content)
-
-  /**
    * Reads files
    * @param path
    *   File path

@@ -110,8 +110,6 @@ trait AdventSolution {
       }
     }
     println
-
-    AdventIO.writeOutput(fileName, solution)
   }
 
   /**
