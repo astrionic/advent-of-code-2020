@@ -4,9 +4,6 @@ import astrionic.adventofcode2020.framework.AdventSolution
 
 object Day07 extends AdventSolution {
 
-  // writeSolution = true
-  executePart = ExecutePart.One
-
   override def solvePart1(input: String): String = {
     val rules: Array[Rule] = parseInput(input)
 
@@ -28,7 +25,9 @@ object Day07 extends AdventSolution {
   }
 
   override def solvePart2(input: String): String = {
-    ???
+    val rules: Array[Rule] = parseInput(input)
+    val numBags = calculateTotalNumBags("shiny gold", rules)
+    (numBags - 1).toString // Remove the shiny gold bag itself
   }
 
   private case class Rule(colour: String, contents: Array[Content]) {
@@ -40,6 +39,7 @@ object Day07 extends AdventSolution {
       colours.toList.map(this.canContain).reduce(_ || _)
     }
   }
+  
   private case class Content(amount: Int, colour: String)
 
   private def parseInput(input: String): Array[Rule] = {
@@ -65,5 +65,16 @@ object Day07 extends AdventSolution {
         }
         Rule(colour, contents)
       })
+  }
+
+  private def calculateTotalNumBags(colour: String, rules: Array[Rule]): Int = {
+    val ruleOption: Option[Rule] = rules.find(_.colour == colour)
+    ruleOption match {
+      case Some(rule) =>
+        1 + rule.contents
+          .map(content => content.amount * calculateTotalNumBags(content.colour, rules))
+          .sum
+      case None => throw new Exception("No matching rule found")
+    }
   }
 }
