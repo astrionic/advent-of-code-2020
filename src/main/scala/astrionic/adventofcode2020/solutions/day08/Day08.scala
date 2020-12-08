@@ -2,94 +2,121 @@ package astrionic.adventofcode2020.solutions.day08
 
 import astrionic.adventofcode2020.framework.AdventSolution
 
-//noinspection DuplicatedCode
 object Day08 extends AdventSolution {
 
   override def solvePart1(input: String): String = {
-    val program: List[Instruction] = parseInput(input)
+    val programOption = parseProgram(input)
+    if(programOption.isEmpty) return "Invalid program"
+    val program = programOption.get
 
-    var acc = 0
-    var pc = 0
-    var previouslyExecuted = Set[Int]()
+    var state = State(program, pc = 0, acc = 0)
 
-    while(!previouslyExecuted.contains(pc)) {
-      previouslyExecuted += pc
-
-      program(pc) match {
-        case Instruction("acc", value) =>
-          acc += value
-          pc += 1
-        case Instruction("jmp", value) =>
-          pc += value
-        case Instruction("nop", _) =>
-          pc += 1
-        case Instruction(_, _) => throw new Exception("Invalid operation")
-      }
+    while(!state.willRepeatInstr) {
+      state = executeNextInstr(state)
     }
 
-    acc.toString
+    state.acc.toString
   }
 
   override def solvePart2(input: String): String = {
-    val program: List[Instruction] = parseInput(input)
-    val programs: List[List[Instruction]] = createProgramPermutations(program)
+    val programOption = parseProgram(input)
+    if(programOption.isEmpty) return "Invalid program"
+    val originalProgram = programOption.get
 
-    for(p <- programs) {
-      var terminated = false
-      var error = false
-      var acc = 0
-      var pc = 0
-      var previouslyExecuted = Set[Int]()
+    val potentialPrograms: List[List[Instr]] = createProgramPermutations(originalProgram)
 
-      while(!terminated && !error && !previouslyExecuted.contains(pc)) {
-        if(pc == p.length) {
-          terminated = true
-        } else if(pc > p.length || pc < 0) {
-          error = true
-        } else {
-          previouslyExecuted += pc
+    for(program <- potentialPrograms) {
 
-          p(pc) match {
-            case Instruction("acc", value) =>
-              acc += value
-              pc += 1
-            case Instruction("jmp", value) =>
-              pc += value
-            case Instruction("nop", _) =>
-              pc += 1
-            case Instruction(_, _) => throw new Exception("Invalid operation")
-          }
-        }
+      var state = State(program, pc = 0, acc = 0)
+
+      while(!state.willTerminate && !state.willError && !state.willRepeatInstr) {
+        state = executeNextInstr(state)
       }
 
-      if(terminated) return acc.toString
+      if(state.willTerminate) return state.acc.toString
     }
-    return "No solution found"
+    
+    "No solution found"
   }
 
-  private case class Instruction(name: String, value: Int)
+  private case class State(
+      program: List[Instr],
+      pc: Int,
+      acc: Int,
+      executedLines: Set[Int] = Set[Int]()
+  ) {
+    def willRepeatInstr: Boolean =
+      executedLines.contains(pc)
 
-  private def parseInput(input: String): List[Instruction] = {
-    input
+    def willTerminate: Boolean =
+      pc == program.length
+
+    def willError: Boolean =
+      pc < 0 || pc > program.size
+  }
+
+  private trait Instr
+  private case class Acc(value: Int) extends Instr
+  private case class Jmp(value: Int) extends Instr
+  private case class Nop(value: Int) extends Instr
+
+  private def parseProgram(input: String): Option[List[Instr]] = {
+    val program = input
       .split('\n')
       .map(line => {
-        val parts = line.split(' ')
-        val name = parts(0)
-        val value = parts(1).toInt
-        Instruction(name, value)
+        parseInstruction(line) match {
+          case Some(instr) => instr
+          case None        => return None
+        }
       })
       .toList
+    Some(program)
   }
 
-  private def createProgramPermutations(program: List[Instruction]) = {
+  private def parseInstruction(input: String): Option[Instr] = {
+    val parts = input.split(' ')
+    if(parts.length != 2) return None
+
+    val name = parts(0)
+    val valueOption = parts(1).toIntOption
+
+    (name, valueOption) match {
+      case ("acc", Some(value)) => Some(Acc(value))
+      case ("jmp", Some(value)) => Some(Jmp(value))
+      case ("nop", Some(value)) => Some(Nop(value))
+      case (_, _)               => None
+    }
+  }
+
+  private def createProgramPermutations(program: List[Instr]): List[List[Instr]] = {
     program.zipWithIndex
-      .filter(i => i._1.name == "jmp" || i._1.name == "nop")
-      .map(i => {
-        val newInstr = i._1 match {
-          case Instruction("jmp", value) => Instruction("nop", value)
-          case Instruction("nop", value) => Instruction("jmp", value)
-        }
-        program.updated(i._2, newInstr)
+      .filter(_._1 match {
+        case Jmp(_) => true
+        case Nop(_) => true
+        case _      => false
       })
+      .map(instrWithIndex => {
+        val (instr, index) = instrWithIndex
+        val newInstr = instr match {
+          case Jmp(value) => Nop(value)
+          case Nop(value) => Jmp(value)
+        }
+        program.updated(index, newInstr)
+      })
+  }
+
+  private def executeNextInstr(state: State): State = {
+    val pc = state.pc
+    val acc = state.acc
+    val newState = state.copy(executedLines = state.executedLines + pc)
+
+    state.program(pc) match {
+      case Acc(value) =>
+        newState.copy(acc = acc + value, pc = pc + 1)
+      case Jmp(value) =>
+        newState.copy(pc = pc + value)
+      case Nop(_) =>
+        newState.copy(pc = pc + 1)
+    }
   }
 }
