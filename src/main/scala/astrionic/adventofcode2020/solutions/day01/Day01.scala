@@ -2,6 +2,7 @@ package astrionic.adventofcode2020.solutions.day01
 
 import astrionic.adventofcode2020.framework.AdventSolution
 
+//noinspection DuplicatedCode
 object Day01 extends AdventSolution {
 
   override def solvePart1(input: String): String = {
