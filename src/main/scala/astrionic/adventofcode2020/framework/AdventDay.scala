@@ -21,7 +21,7 @@ object AdventDay {
    */
   def apply(day: Int): AdventDay = {
     val dayNumber: Int = if(day.abs > 25) 0 else day.abs
-    val dayWitheLeadingZero: String = if(dayNumber > 10) s"$dayNumber" else s"0$dayNumber"
+    val dayWitheLeadingZero: String = if(dayNumber > 9) s"$dayNumber" else s"0$dayNumber"
     new AdventDay(dayNumber, dayWitheLeadingZero)
   }
 }
