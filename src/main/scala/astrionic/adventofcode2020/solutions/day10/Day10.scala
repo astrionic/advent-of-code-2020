@@ -2,10 +2,9 @@ package astrionic.adventofcode2020.solutions.day10
 
 import astrionic.adventofcode2020.framework.AdventSolution
 
-object Day10 extends AdventSolution {
+import scala.collection.immutable.HashMap
 
-  // writeSolution = true
-  executePart = ExecutePart.One
+object Day10 extends AdventSolution {
 
   override def solvePart1(input: String): String = {
     val adapters = 0 :: parseInput(input).sorted
@@ -21,7 +20,25 @@ object Day10 extends AdventSolution {
   }
 
   override def solvePart2(input: String): String = {
-    ???
+    val adapterJoltages = parseInput(input).sorted
+    val builtIn = adapterJoltages.max + 3
+    val adaptersWithBuiltIn = adapterJoltages :+ builtIn
+
+    var possibilities = HashMap[Int, Long](
+      0 -> 1 // Add outlet
+    )
+
+    for(adapter <- adaptersWithBuiltIn) {
+      val min = Math.max(0, adapter - 3)
+      val max = adapter - 1
+      val n = (min to max).map(possibilities.getOrElse(_, 0L)).sum
+      possibilities += (adapter -> n)
+    }
+
+    possibilities.get(builtIn) match {
+      case Some(n) => n.toString
+      case None    => "No solution found"
+    }
   }
 
   private def parseInput(input: String): List[Int] =
