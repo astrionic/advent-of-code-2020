@@ -2,22 +2,26 @@ package astrionic.adventofcode2020.solutions.day12
 
 import astrionic.adventofcode2020.framework.AdventSolution
 
+//noinspection DuplicatedCode
 object Day12 extends AdventSolution {
-
-  // writeSolution = true
-  executePart = ExecutePart.One
 
   override def solvePart1(input: String): String = {
     val cmds: List[Command] = parseInput(input)
     val startingPos = (0, 0)
     val ship = cmds.foldLeft(Ship(startingPos))((s: Ship, cmd: Command) => {
-      s.move(cmd)
+      s.movePart1(cmd)
     })
     ship.manhattanDistanceTo(startingPos).toString
   }
 
   override def solvePart2(input: String): String = {
-    ???
+    val cmds: List[Command] = parseInput(input)
+    val startingPos = (0, 0)
+    val waypointStartingPos = (10, 1)
+    val ship = cmds.foldLeft(Ship(startingPos, waypointStartingPos))((s: Ship, cmd: Command) => {
+      s.movePart2(cmd)
+    })
+    ship.manhattanDistanceTo(startingPos).toString
   }
 
   private def parseInput(input: String): List[Command] = input
