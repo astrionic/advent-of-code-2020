@@ -4,9 +4,6 @@ import astrionic.adventofcode2020.framework.AdventSolution
 
 object Day14 extends AdventSolution {
 
-  // writeSolution = true
-  executePart = ExecutePart.One
-
   override def solvePart1(input: String): String = {
     val program: Seq[Instr] = parseInput(input)
 
@@ -18,11 +15,22 @@ object Day14 extends AdventSolution {
     }
 
     mem.values.sum.toString
-
   }
 
   override def solvePart2(input: String): String = {
-    ???
+    val program: Seq[Instr] = parseInput(input)
+
+    var mask = "X".repeat(36)
+    var mem = Map[Long, Long]()
+    for(instr <- program) instr match {
+      case UpdateMask(newMask) => mask = newMask
+      case Write(addr, value) => {
+        val masked = applyMaskPart2(addr, mask)
+        val addresses = createPossibleAddresses(masked).map(toDecimal)
+        addresses.foreach { addr => mem += (addr -> value) }
+      }
+    }
+    mem.values.sum.toString
   }
 
   private trait Instr
@@ -60,11 +68,34 @@ object Day14 extends AdventSolution {
     toDecimal(resultBinary)
   }
 
-  private def toBinary(n: Long): String = n match {
-    case 1 | 0 => n.toString
-    case _     => s"${toBinary(n / 2)}${n % 2}"
+  private def applyMaskPart2(addr: Long, mask: String): String = {
+    val addrBinary = toBinary(addr)
+    addrBinary.reverse
+      .zipAll(mask.reverse, '0', '0')
+      .map {
+        case (_, '1')     => '1'
+        case (_, 'X')     => 'X'
+        case (addrBit, _) => addrBit
+      }
+      .reverse
+      .mkString("")
+  }
+
+  private def toBinary(decimal: Long): String = decimal match {
+    case 1 | 0 => decimal.toString
+    case _     => s"${toBinary(decimal / 2)}${decimal % 2}"
   }
 
   private def toDecimal(binary: String): Long =
     java.lang.Long.parseLong(binary, 2)
+
+  private def createPossibleAddresses(addr: String): List[String] = {
+    if(addr.contains('X')) {
+      val zero = addr.replaceFirst("X", "0")
+      val one = addr.replaceFirst("X", "1")
+      createPossibleAddresses(zero) ++ createPossibleAddresses(one)
+    } else {
+      List(addr)
+    }
+  }
 }
