@@ -6,36 +6,17 @@ object Day14 extends AdventSolution {
 
   override def solvePart1(input: String): String = {
     val program: Seq[Instr] = parseInput(input)
-
-    var mask = "X".repeat(36)
-    var mem = Map[Int, Long]()
-    for(instr <- program) instr match {
-      case UpdateMask(newMask) => mask = newMask
-      case Write(addr, value)  => mem += (addr -> applyMask(value, mask))
-    }
-
-    mem.values.sum.toString
+    val initialState = ProgramState()
+    val finalState = program.foldLeft(initialState)((state, instr) => state.executeInstrPart1(instr))
+    finalState.memory.values.sum.toString
   }
 
   override def solvePart2(input: String): String = {
     val program: Seq[Instr] = parseInput(input)
-
-    var mask = "X".repeat(36)
-    var mem = Map[Long, Long]()
-    for(instr <- program) instr match {
-      case UpdateMask(newMask) => mask = newMask
-      case Write(addr, value) => {
-        val masked = applyMaskPart2(addr, mask)
-        val addresses = createPossibleAddresses(masked).map(toDecimal)
-        addresses.foreach { addr => mem += (addr -> value) }
-      }
-    }
-    mem.values.sum.toString
+    val initialState = ProgramState()
+    val finalState = program.foldLeft(initialState)((state, instr) => state.executeInstrPart2(instr))
+    finalState.memory.values.sum.toString
   }
-
-  private trait Instr
-  private case class UpdateMask(mask: String) extends Instr
-  private case class Write(addr: Int, value: Long) extends Instr
 
   private def parseInput(input: String): List[Instr] =
     input.split('\n').flatMap(parseLine).toList
@@ -48,11 +29,33 @@ object Day14 extends AdventSolution {
       Some(UpdateMask(s.substring(7)))
     case s if writeInstrPattern matches s =>
       val parts = s.split("] = ")
-      val addr = parts(0).substring(4).toInt
+      val addr = parts(0).substring(4).toLong
       val value = parts(1).toLong
       Some(Write(addr, value))
     case _ =>
       None
+  }
+
+  private trait Instr
+  private case class UpdateMask(mask: String) extends Instr
+  private case class Write(addr: Long, value: Long) extends Instr
+
+  private case class ProgramState(
+      mask: String = "X".repeat(36),
+      memory: Map[Long, Long] = Map[Long, Long]()
+  ) {
+    def executeInstrPart1(instr: Instr): ProgramState = instr match {
+      case UpdateMask(newMask) => copy(mask = newMask)
+      case Write(addr, value)  => copy(memory = memory + (addr -> applyMask(value, mask)))
+    }
+
+    def executeInstrPart2(instr: Instr): ProgramState = instr match {
+      case UpdateMask(newMask) => copy(mask = newMask)
+      case Write(addr, value) =>
+        val masked = applyMaskPart2(addr, mask)
+        val addresses = createPossibleAddresses(masked).map(toDecimal)
+        copy(memory = memory ++ addresses.map(_ -> value))
+    }
   }
 
   private def applyMask(value: Long, mask: String): Long = {
