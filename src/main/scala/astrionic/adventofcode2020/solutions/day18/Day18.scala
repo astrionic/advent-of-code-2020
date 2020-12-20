@@ -2,10 +2,9 @@ package astrionic.adventofcode2020.solutions.day18
 
 import astrionic.adventofcode2020.framework.AdventSolution
 
-object Day18 extends AdventSolution {
+import scala.collection.mutable
 
-  // writeSolution = true
-  executePart = ExecutePart.One
+object Day18 extends AdventSolution {
 
   override def solvePart1(input: String): String = {
     val tokens = parseInput(input)
@@ -13,45 +12,64 @@ object Day18 extends AdventSolution {
   }
 
   override def solvePart2(input: String): String = {
-    ???
+    implicit val part2: Boolean = true
+    val tokens = parseInput(input)
+    tokens.map(eval).sum.toString
   }
 
-  private def eval(tokens: List[Token]): Long = {
-    if(tokens.contains(ParenOpen) && tokens.contains(ParenClose)) {
-      val openIndex = tokens.indexOf(ParenOpen)
-      var openParens = 1
-      var i = openIndex + 1
-      while(openParens > 0) {
-        tokens(i) match {
-          case ParenOpen  => openParens += 1
-          case ParenClose => openParens -= 1
-          case _          => // do nothing
-        }
-        i += 1
-      }
+  private def eval(tokens: List[Token])(implicit part2: Boolean = false): Long = {
+    val nums = new mutable.Stack[Long]()
+    val ops = new mutable.Stack[Token]()
 
-      val before = tokens.slice(0, openIndex)
-      val current = List(Number(eval(tokens.slice(openIndex + 1, i - 1))))
-      val after = tokens.slice(i, tokens.length)
-      return eval(before ++ current ++ after)
+    for(token <- tokens) token match {
+      case Number(n) => nums.push(n)
+      case ParenOpen => ops.push(ParenOpen)
+      case ParenClose =>
+        while(ops.head != ParenOpen) {
+          ops.pop() match {
+            case op: Operator => nums.push(calculate(nums.pop(), op, nums.pop()))
+            case _            => throw new Exception()
+          }
+        }
+        ops.pop()
+      case op: Operator =>
+        while(
+          ops.nonEmpty &&
+          ops.head.isInstanceOf[Operator] &&
+          ops.head.asInstanceOf[Operator].precedence >= op.precedence
+        ) {
+          nums.push(calculate(nums.pop(), ops.pop().asInstanceOf[Operator], nums.pop()))
+        }
+        ops.push(op)
     }
-    tokens match {
-      case Number(n) :: Nil                        => n
-      case Number(a) :: Times :: Number(b) :: tail => eval(Number(a * b) :: tail)
-      case Number(a) :: Plus :: Number(b) :: tail  => eval(Number(a + b) :: tail)
-      case x                                       => println(x); throw new Exception()
+
+    while(ops.nonEmpty) {
+      nums.push(calculate(nums.pop(), ops.pop().asInstanceOf[Operator], nums.pop()))
     }
+    
+    nums.pop()
+  }
+
+  private def calculate(a: Long, op: Operator, b: Long): Long = op match {
+    case Plus  => a + b
+    case Times => a * b
   }
 
   private trait Token
 
   private case class Number(value: Long) extends Token
 
-  private trait Operator extends Token
+  private trait Operator extends Token {
+    def precedence(implicit part2: Boolean): Int
+  }
 
-  private object Plus extends Operator
+  private object Plus extends Operator {
+    def precedence(implicit part2: Boolean = false): Int = if(part2) 1 else 0
+  }
 
-  private object Times extends Operator
+  private object Times extends Operator {
+    def precedence(implicit part2: Boolean = false): Int = 0
+  }
 
   private object ParenOpen extends Token
 
