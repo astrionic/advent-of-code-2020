@@ -2,21 +2,17 @@ package astrionic.adventofcode2020.solutions.day21
 
 import astrionic.adventofcode2020.framework.AdventSolution
 
-//noinspection DuplicatedCode
 object Day21 extends AdventSolution {
 
   override def solvePart1(input: String): String = {
     val food = parseInput(input)
 
-    val allergens = food.flatMap(_.allergens).toSet
-    val canContainAllergens: Set[String] = allergens.flatMap(a => {
-      food
-        .filter(_.allergens.contains(a))
-        .map(_.ingredients.toSet)
-        .reduce(_ intersect _)
-    })
+    val ingredientsWithAllergenRisk: Set[String] = mapIngredientsToAllergens(food)
+      .flatMap(_.potentialIngredients)
+      .toSet
+
     val ingredients: Set[String] = food.flatMap(_.ingredients).toSet
-    val cantContainAllergens = ingredients diff canContainAllergens
+    val cantContainAllergens = ingredients diff ingredientsWithAllergenRisk
 
     food.flatMap(_.ingredients).count(cantContainAllergens.contains).toString
   }
@@ -24,36 +20,25 @@ object Day21 extends AdventSolution {
   override def solvePart2(input: String): String = {
     val food = parseInput(input)
 
-    val allergens = food.flatMap(_.allergens).toSet
-    val allergenWithIngredients: Map[String, Set[String]] = allergens
-      .map(allergen => {
-        val potentialIngredients = food
-          .filter(_.allergens.contains(allergen))
-          .map(_.ingredients.toSet)
-          .reduce(_ intersect _)
-        (allergen, potentialIngredients)
-      })
-      .toMap
+    val allergens = mapIngredientsToAllergens(food)
 
-    var definitive = allergenWithIngredients
-      .filter(_._2.size == 1)
-      .map(awi => (awi._1, awi._2.head))
+    var definitive = allergens.filter(_.potentialIngredients.size == 1)
+    var ambiguous = allergens.filter(_.potentialIngredients.size > 1)
 
-    var ambiguous = allergenWithIngredients
-      .filter(_._2.size > 1)
     while(ambiguous.nonEmpty) {
-      ambiguous = ambiguous.map(awi => {
-        val (a, in) = awi
-        (a, in diff definitive.values.toSet)
+      ambiguous = ambiguous.map(a => {
+        a.copy(potentialIngredients = a.potentialIngredients diff definitive.flatMap(_.potentialIngredients).toSet)
       })
-      definitive ++= ambiguous.filter(_._2.size == 1).map(awi => (awi._1, awi._2.head))
-      ambiguous = ambiguous.filter(_._2.size > 1)
+      definitive ++= ambiguous.filter(_.potentialIngredients.size == 1)
+      ambiguous = ambiguous.filter(_.potentialIngredients.size > 1)
     }
 
-    definitive.toList.sortBy(_._1).map(_._2).mkString(",")
+    definitive.sortBy(_.name).map(_.potentialIngredients.head).mkString(",")
   }
 
   private case class Food(ingredients: Set[String], allergens: Set[String])
+
+  private case class Allergen(name: String, potentialIngredients: Set[String])
 
   private def parseInput(input: String): List[Food] = {
     val lines = input.split('\n')
@@ -65,5 +50,17 @@ object Day21 extends AdventSolution {
         case _ => throw new Exception
       })
       .toList
+  }
+
+  private def mapIngredientsToAllergens(food: List[Food]): List[Allergen] = {
+    val allergens = food.flatMap(_.allergens).distinct
+    allergens
+      .map(allergen => {
+        val potentialIngredients = food
+          .filter(_.allergens.contains(allergen))
+          .map(_.ingredients.toSet)
+          .reduce(_ intersect _)
+        Allergen(allergen, potentialIngredients)
+      })
   }
 }
