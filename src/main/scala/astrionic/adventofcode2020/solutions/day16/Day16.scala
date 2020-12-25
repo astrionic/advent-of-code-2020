@@ -4,9 +4,6 @@ import astrionic.adventofcode2020.framework.AdventSolution
 
 object Day16 extends AdventSolution {
 
-  // writeSolution = true
-  executePart = ExecutePart.One
-
   override def solvePart1(input: String): String = {
     val in: PuzzleInput = parseInput(input)
     val ranges: Seq[Range] = in.rules.flatMap(_.ranges)
@@ -18,7 +15,42 @@ object Day16 extends AdventSolution {
   }
 
   override def solvePart2(input: String): String = {
-    ???
+    val in: PuzzleInput = parseInput(input)
+    val allRanges = in.rules.flatMap(_.ranges)
+
+    val validTickets = in.nearbyTickets
+      .filter(ticket => ticket.forall(field => allRanges.count(_.contains(field)) > 0))
+
+    val rulesWithPotentialPositions = in.rules.map(rule => {
+      val potentialPositions = validTickets
+        .map(ticket => {
+          ticket.zipWithIndex.filter(field => rule.ranges.count(_.contains(field._1)) > 0).map(_._2).toSet
+        })
+        .reduce(_ intersect _)
+      (rule.name, potentialPositions)
+    })
+
+    val (a, d) = rulesWithPotentialPositions.partition(_._2.size > 1)
+    var ambiguous = a.toSet
+    var definitive = d.toSet
+
+    while(ambiguous.nonEmpty) {
+      ambiguous = ambiguous.map(a => {
+        (a._1, a._2 diff definitive.flatMap(_._2))
+      })
+      val (newAmbiguous, newDefinitive) = ambiguous.partition(_._2.size > 1)
+      definitive ++= newDefinitive
+      ambiguous = newAmbiguous
+    }
+
+    val departureFieldIndices = definitive.filter(_._1.startsWith("departure")).flatMap(_._2)
+
+    departureFieldIndices
+      .map(
+        in.myTicket(_).toLong
+      )
+      .product
+      .toString
   }
 
   private case class PuzzleInput(
