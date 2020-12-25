@@ -1,8 +1,7 @@
 package astrionic.adventofcode2020.solutions.day24
 
 import astrionic.adventofcode2020.framework.AdventSolution
-import astrionic.adventofcode2020.solutions.day24.Day24.Dir.Dir
-import astrionic.adventofcode2020.solutions.helpers.Helpers.Tuple3IntExtensions
+import astrionic.adventofcode2020.solutions.day24.Dir.Dir
 
 object Day24 extends AdventSolution {
 
@@ -11,23 +10,11 @@ object Day24 extends AdventSolution {
 
   override def solvePart1(input: String): String = {
     val paths = parseInput(input)
-    var black = Set[(Int, Int, Int)]()
 
-    def flip(tile: (Int, Int, Int)): Unit = {
-      if(black.contains(tile)) {
-        black -= tile
-      } else {
-        black += tile
-      }
-    }
+    val floor = new TileFloor()
+    floor.flipAll(paths)
 
-    val start = (0, 0, 0)
-    for(path <- paths) {
-      val tile = path.foldLeft(start)((loc, dir) => move(loc, dir))
-      flip(tile)
-    }
-
-    black.size.toString
+    floor.numBlackTiles.toString
   }
 
   override def solvePart2(input: String): String = {
@@ -35,38 +22,26 @@ object Day24 extends AdventSolution {
   }
 
   private def parseInput(input: String): List[List[Dir]] = {
-    val regex = "e|se|sw|w|nw|ne".r
     input
       .split("\n")
-      .map(
-        regex
-          .findAllIn(_)
-          .map {
-            case "e"  => Dir.E
-            case "se" => Dir.SE
-            case "sw" => Dir.SW
-            case "w"  => Dir.W
-            case "nw" => Dir.NW
-            case "ne" => Dir.NE
-            case _    => throw new Exception
-          }
-          .toList
-      )
+      .map(parseLine)
       .toList
   }
 
-  private[day24] object Dir extends Enumeration {
-    type Dir = Value
-    val E, SE, SW, W, NW, NE = Value
-  }
+  private val directionRegex = "e|se|sw|w|nw|ne".r
 
-  private def move(loc: (Int, Int, Int), dir: Dir): (Int, Int, Int) = dir match {
-    case Dir.E  => loc + (1, -1, 0)
-    case Dir.SE => loc + (0, -1, 1)
-    case Dir.SW => loc + (-1, 0, 1)
-    case Dir.W  => loc + (-1, 1, 0)
-    case Dir.NW => loc + (0, 1, -1)
-    case Dir.NE => loc + (1, 0, -1)
-
+  private def parseLine(line: String): List[Dir] = {
+    directionRegex
+      .findAllIn(line)
+      .map {
+        case "e"  => Dir.E
+        case "se" => Dir.SE
+        case "sw" => Dir.SW
+        case "w"  => Dir.W
+        case "nw" => Dir.NW
+        case "ne" => Dir.NE
+        case _    => throw new Exception
+      }
+      .toList
   }
 }
